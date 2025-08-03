@@ -25,4 +25,4 @@ A fun, interactive claw machine game built with HTML, CSS, and JavaScript!
 - Dynamic prize generation
 - Scoring system
 - Responsive design
-- Keyboard + mouse controls
+- Keyboard + mouse controls# claw-machine
