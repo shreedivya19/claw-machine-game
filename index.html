@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧸 Pixel Claw Machine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: #333;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            position: relative;
+            width: 450px;
+            height: 600px;
+            border: 6px solid #222;
+        }
+
+        .game-title {
+            text-align: center;
+            color: #fff;
+            font-size: 2.2em;
+            font-weight: bold;
+            text-shadow: 3px 3px 0px #333, -1px -1px 0px #333, 1px -1px 0px #333, -1px 1px 0px #333;
+            margin-bottom: 15px;
+            background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+            padding: 15px;
+            border-radius: 12px;
+            border: 4px solid #fff;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            animation: titlePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .machine-body {
+            background: linear-gradient(145deg, #87ceeb, #5f9ea0);
+            border-radius: 10px;
+            height: 400px;
+            position: relative;
+            border: 4px solid #4682b4;
+            overflow: hidden;
+        }
+
+        .glass-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+            border-radius: 6px 6px 0 0;
+        }
+
+        .claw-track {
+            position: absolute;
+            top: 0;
+            left: 20px;
+            right: 20px;
+            height: 8px;
+            background: #8B4513;
+            z-index: 10;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .claw-container {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            transition: all 0.3s ease;
+        }
+
+        .claw-cable {
+            width: 3px;
+            height: 40px;
+            background: #333;
+            margin: 0 auto;
+            border-radius: 2px;
+        }
+
+        .claw {
+            width: 32px;
+            height: 24px;
+            background: #ffd700;
+            border: 2px solid #333;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .claw-left, .claw-right {
+            position: absolute;
+            width: 8px;
+            height: 16px;
+            background: #333;
+            bottom: -16px;
+            transition: all 0.3s ease;
+        }
+
+        .claw-left {
+            left: 6px;
+            transform: rotate(-15deg);
+            border-radius: 0 0 0 50%;
+        }
+
+        .claw-right {
+            right: 6px;
+            transform: rotate(15deg);
+            border-radius: 0 0 50% 0;
+        }
+
+        .claw-container.grabbing .claw-left {
+            transform: rotate(-45deg);
+        }
+
+        .claw-container.grabbing .claw-right {
+            transform: rotate(45deg);
+        }
+
+        .claw-container.dropping {
+            animation: clawDrop 1.5s ease-in-out;
+        }
+
+        @keyframes clawDrop {
+            0% { top: 8px; }
+            40% { top: 240px; }
+            60% { top: 240px; }
+            100% { top: 8px; }
+        }
+
+        .claw-container.dropping .claw-cable {
+            animation: cableExtend 1.5s ease-in-out;
+        }
+
+        @keyframes cableExtend {
+            0% { height: 40px; }
+            40% { height: 240px; }
+            60% { height: 240px; }
+            100% { height: 40px; }
+        }
+
+        .prize-area {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            height: 180px;
+            background: rgba(135, 206, 235, 0.3);
+            border-radius: 8px;
+            border: 2px solid rgba(70, 130, 180, 0.5);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: flex-end;
+            padding: 10px;
+        }
+
+        .prize {
+            width: 56px;
+            height: 56px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid var(--toy-border);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.4);
+            position: relative;
+            background: var(--toy-color);
+            image-rendering: pixelated;
+            overflow: hidden;
+        }
+
+        .toy-body {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toy-head {
+            width: 20px;
+            height: 20px;
+            background: var(--toy-head);
+            border-radius: 50%;
+            position: relative;
+            margin-bottom: 2px;
+            border: 1px solid var(--toy-border);
+        }
+
+        .toy-eyes {
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .toy-eye {
+            width: 3px;
+            height: 3px;
+            background: #333;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 1px;
+        }
+
+        .toy-body-main {
+            width: 26px;
+            height: 20px;
+            background: var(--toy-color);
+            border-radius: 4px;
+            border: 1px solid var(--toy-border);
+            position: relative;
+        }
+
+        .toy-arms {
+            position: absolute;
+            top: 2px;
+            width: 100%;
+        }
+
+        .toy-arm {
+            width: 4px;
+            height: 8px;
+            background: var(--toy-color);
+            border-radius: 2px;
+            border: 1px solid var(--toy-border);
+            position: absolute;
+        }
+
+        .toy-arm.left {
+            left: -3px;
+        }
+
+        .toy-arm.right {
+            right: -3px;
+        }
+
+        .toy-belly {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+        }
+
+        .prize:hover {
+            transform: scale(1.08);
+            animation: toyWiggle 0.6s ease-in-out infinite;
+        }
+
+        @keyframes toyWiggle {
+            0%, 100% { transform: scale(1.08) rotate(0deg); }
+            25% { transform: scale(1.08) rotate(-2deg); }
+            75% { transform: scale(1.08) rotate(2deg); }
+        }
+
+        .prize.grabbed {
+            animation: toyGrabbed 1.5s ease-in-out;
+        }
+
+        @keyframes toyGrabbed {
+            0% { transform: scale(1); }
+            30% { transform: scale(0.8) translateY(-60px); }
+            70% { transform: scale(0.8) translateY(-60px); }
+            100% { transform: scale(0.8) translateY(-200px) rotate(360deg); opacity: 0; }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 15px;
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .control-btn {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+            border: 3px solid #333;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            flex: 1;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .control-btn:active {
+            transform: translateY(1px);
+        }
+
+        .control-btn.grab-btn {
+            background: linear-gradient(145deg, #2ecc71, #27ae60);
+            font-size: 1.1em;
+        }
+
+        .score-display {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #222;
+            color: #4ecdc4;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: 2px solid #4ecdc4;
+            font-family: 'Courier New', monospace;
+        }
+
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            text-align: center;
+            display: none;
+            z-index: 30;
+            border: 2px solid #4ecdc4;
+            font-family: 'Courier New', monospace;
+            max-width: 300px;
+        }
+
+        .success {
+            color: #2ecc71;
+            border-color: #2ecc71;
+        }
+
+        .fail {
+            color: #e74c3c;
+            border-color: #e74c3c;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #fff;
+            font-size: 0.9em;
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        @keyframes machineGlow {
+            0%, 100% { box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+            50% { box-shadow: 0 20px 40px rgba(78, 205, 196, 0.3); }
+        }
+
+        .game-container:hover {
+            animation: machineGlow 2s infinite;
+        }
+
+        .prize-counter {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #222;
+            color: #ff6b6b;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            border: 2px solid #ff6b6b;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">🧸 PIXEL CLAW MACHINE 🧸</h1>
+        <div class="score-display">SCORE: <span id="score">0</span></div>
+        <div class="prize-counter">TOYS: <span id="toyCount">8</span></div>
+        
+        <div class="machine-body">
+            <div class="glass-effect"></div>
+            <div class="claw-track"></div>
+            <div class="claw-container" id="clawContainer">
+                <div class="claw-cable"></div>
+                <div class="claw">
+                    <div class="claw-left"></div>
+                    <div class="claw-right"></div>
+                </div>
+            </div>
+            
+            <div class="prize-area" id="prizeArea">
+                <!-- Prizes will be generated here -->
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="leftBtn">◀ MOVE</button>
+            <button class="control-btn grab-btn" id="grabBtn">🦾 GRAB</button>
+            <button class="control-btn" id="rightBtn">MOVE ▶</button>
+        </div>
+        
+        <div class="instruction">Use ARROW KEYS or A/D + SPACEBAR to play!</div>
+        
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        class PixelClawMachine {
+            constructor() {
+                this.clawContainer = document.getElementById('clawContainer');
+                this.prizeArea = document.getElementById('prizeArea');
+                this.scoreElement = document.getElementById('score');
+                this.toyCountElement = document.getElementById('toyCount');
+                this.messageElement = document.getElementById('message');
+                
+                this.clawPosition = 50; // percentage
+                this.score = 0;
+                this.prizes = [];
+                this.isGrabbing = false;
+                this.toyCount = 0;
+                
+                this.init();
+                this.bindEvents();
+            }
+            
+            init() {
+                this.generatePrizes();
+                this.updateClawPosition();
+            }
+            
+            generatePrizes() {
+                // Kawaii toy types with super cute colors and characteristics
+                const kawaiToyTypes = [
+                    { type: 'bear', color: '#D2691E', head: '#F4A460', border: '#8B4513', name: 'Pixel Bear' },
+                    { type: 'cat', color: '#FFB6C1', head: '#FFC0CB', border: '#FF69B4', name: 'Pixel Cat' },
+                    { type: 'dog', color: '#FF7F50', head: '#FFA07A', border: '#FF6347', name: 'Pixel Dog' },
+                    { type: 'rabbit', color: '#FFFFFF', head: '#F8F8FF', border: '#E6E6FA', name: 'Pixel Bunny' },
+                    { type: 'panda', color: '#000000', head: '#FFFFFF', border: '#2F2F2F', name: 'Pixel Panda' },
+                    { type: 'fox', color: '#FF8C00', head: '#FFB347', border: '#FF7F00', name: 'Pixel Fox' },
+                    { type: 'pig', color: '#FFC0CB', head: '#FFB6C1', border: '#FF1493', name: 'Pixel Pig' },
+                    { type: 'frog', color: '#98FB98', head: '#ADFF2F', border: '#32CD32', name: 'Pixel Frog' }
+                ];
+                
+                this.prizeArea.innerHTML = '';
+                this.prizes = [];
+                this.toyCount = 8;
+                
+                for (let i = 0; i < 8; i++) {
+                    const toyData = kawaiToyTypes[Math.floor(Math.random() * kawaiToyTypes.length)];
+                    
+                    const prize = document.createElement('div');
+                    prize.className = 'prize';
+                    prize.style.setProperty('--toy-color', toyData.color);
+                    prize.style.setProperty('--toy-head', toyData.head);
+                    prize.style.setProperty('--toy-border', toyData.border);
+                    prize.dataset.points = Math.floor(Math.random() * 40) + 20;
+                    prize.dataset.name = toyData.name;
+                    prize.dataset.type = toyData.type;
+                    
+                    // Create the kawaii toy structure
+                    const toyBody = document.createElement('div');
+                    toyBody.className = 'toy-body';
+                    
+                    // Head with kawaii proportions
+                    const head = document.createElement('div');
+                    head.className = 'toy-head';
+                    
+                    // Big sparkly kawaii eyes
+                    const eyes = document.createElement('div');
+                    eyes.className = 'toy-eyes';
+                    eyes.innerHTML = '<span class="toy-eye"></span><span class="toy-eye"></span>';
+                    head.appendChild(eyes);
+                    
+                    // Cute little nose
+                    const nose = document.createElement('div');
+                    nose.className = 'toy-nose';
+                    head.appendChild(nose);
+                    
+                    // Happy kawaii smile
+                    const mouth = document.createElement('div');
+                    mouth.className = 'toy-mouth';
+                    head.appendChild(mouth);
+                    
+                    // Rosy kawaii cheeks
+                    const cheeks = document.createElement('div');
+                    cheeks.className = 'toy-cheeks';
+                    cheeks.innerHTML = '<div class="toy-cheek left"></div><div class="toy-cheek right"></div>';
+                    head.appendChild(cheeks);
+                    
+                    // Kawaii animal features
+                    if (toyData.type === 'panda') {
+                        // Panda ears
+                        const leftEar = document.createElement('div');
+                        leftEar.style.cssText = 'position:absolute; top:-3px; left:1px; width:8px; height:8px; background:#000; border-radius:50%; border:1px solid #333;';
+                        const rightEar = document.createElement('div');
+                        rightEar.style.cssText = 'position:absolute; top:-3px; right:1px; width:8px; height:8px; background:#000; border-radius:50%; border:1px solid #333;';
+                        head.appendChild(leftEar);
+                        head.appendChild(rightEar);
+                    } else if (toyData.type === 'cat') {
+                        // Cat ears
+                        const leftEar = document.createElement('div');
+                        leftEar.style.cssText = 'position:absolute; top:-4px; left:3px; width:6px; height:8px; background:var(--toy-color); border-radius:50% 50% 0 0; border:1px solid var(--toy-border); transform:rotate(-20deg);';
+                        const rightEar = document.createElement('div');
+                        rightEar.style.cssText = 'position:absolute; top:-4px; right:3px; width:6px; height:8px; background:var(--toy-color); border-radius:50% 50% 0 0; border:1px solid var(--toy-border); transform:rotate(20deg);';
+                        head.appendChild(leftEar);
+                        head.appendChild(rightEar);
+                    } else if (toyData.type === 'rabbit') {
+                        // Bunny ears
+                        const leftEar = document.createElement('div');
+                        leftEar.style.cssText = 'position:absolute; top:-8px; left:4px; width:4px; height:12px; background:var(--toy-color); border-radius:50% 50% 0 0; border:1px solid var(--toy-border); transform:rotate(-15deg);';
+                        const rightEar = document.createElement('div');
+                        rightEar.style.cssText = 'position:absolute; top:-8px; right:4px; width:4px; height:12px; background:var(--toy-color); border-radius:50% 50% 0 0; border:1px solid var(--toy-border); transform:rotate(15deg);';
+                        head.appendChild(leftEar);
+                        head.appendChild(rightEar);
+                    } else if (toyData.type === 'fox') {
+                        // Fox ears
+                        const leftEar = document.createElement('div');
+                        leftEar.style.cssText = 'position:absolute; top:-4px; left:2px; width:7px; height:9px; background:var(--toy-color); border-radius:50% 50% 0 0; border:1px solid var(--toy-border); transform:rotate(-25deg);';
+                        const rightEar = document.createElement('div');
+                        rightEar.style.cssText = 'position:absolute; top:-4px; right:2px; width:7px; height:9px; background:var(--toy-color); border-radius:50% 50% 0 0; border:1px solid var(--toy-border); transform:rotate(25deg);';
+                        head.appendChild(leftEar);
+                        head.appendChild(rightEar);
+                    }
+                    
+                    // Kawaii body
+                    const bodyMain = document.createElement('div');
+                    bodyMain.className = 'toy-body-main';
+                    
+                    // Cute little arms
+                    const arms = document.createElement('div');
+                    arms.className = 'toy-arms';
+                    arms.innerHTML = '<div class="toy-arm left"></div><div class="toy-arm right"></div>';
+                    bodyMain.appendChild(arms);
+                    
+                    // Belly with kawaii heart
+                    const belly = document.createElement('div');
+                    belly.className = 'toy-belly';
+                    const heart = document.createElement('div');
+                    heart.className = 'toy-heart';
+                    belly.appendChild(heart);
+                    bodyMain.appendChild(belly);
+                    
+                    toyBody.appendChild(head);
+                    toyBody.appendChild(bodyMain);
+                    prize.appendChild(toyBody);
+                    
+                    this.prizeArea.appendChild(prize);
+                    this.prizes.push(prize);
+                }
+                
+                this.toyCountElement.textContent = this.toyCount;
+            }
+            
+            bindEvents() {
+                document.getElementById('leftBtn').addEventListener('click', () => this.moveLeft());
+                document.getElementById('rightBtn').addEventListener('click', () => this.moveRight());
+                document.getElementById('grabBtn').addEventListener('click', () => this.grab());
+                
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case 'ArrowLeft':
+                        case 'a':
+                        case 'A':
+                            this.moveLeft();
+                            break;
+                        case 'ArrowRight':
+                        case 'd':
+                        case 'D':
+                            this.moveRight();
+                            break;
+                        case ' ':
+                        case 'Enter':
+                            e.preventDefault();
+                            this.grab();
+                            break;
+                    }
+                });
+            }
+            
+            moveLeft() {
+                if (this.isGrabbing) return;
+                this.clawPosition = Math.max(15, this.clawPosition - 12);
+                this.updateClawPosition();
+            }
+            
+            moveRight() {
+                if (this.isGrabbing) return;
+                this.clawPosition = Math.min(85, this.clawPosition + 12);
+                this.updateClawPosition();
+            }
+            
+            updateClawPosition() {
+                this.clawContainer.style.left = this.clawPosition + '%';
+            }
+            
+            grab() {
+                if (this.isGrabbing) return;
+                
+                this.isGrabbing = true;
+                this.clawContainer.classList.add('grabbing', 'dropping');
+                
+                setTimeout(() => {
+                    this.checkForPrize();
+                }, 800);
+                
+                setTimeout(() => {
+                    this.clawContainer.classList.remove('grabbing', 'dropping');
+                    this.isGrabbing = false;
+                }, 1500);
+            }
+            
+            checkForPrize() {
+                const clawRect = this.clawContainer.getBoundingClientRect();
+                const clawCenterX = clawRect.left + clawRect.width / 2;
+                
+                let grabbedPrize = null;
+                let minDistance = Infinity;
+                
+                this.prizes.forEach(prize => {
+                    if (prize.style.display === 'none') return;
+                    
+                    const prizeRect = prize.getBoundingClientRect();
+                    const prizeCenterX = prizeRect.left + prizeRect.width / 2;
+                    const distance = Math.abs(clawCenterX - prizeCenterX);
+                    
+                    if (distance < 40 && distance < minDistance) {
+                        minDistance = distance;
+                        grabbedPrize = prize;
+                    }
+                });
+                
+                if (grabbedPrize) {
+                    this.grabPrize(grabbedPrize);
+                } else {
+                    const failMessages = [
+                        'CLAW MISSED! TRY AGAIN! 😅',
+                        'SO CLOSE! KEEP TRYING! 🎯',
+                        'THE TOY ESCAPED! 🏃‍♂️',
+                        'ALMOST HAD IT! 💫'
+                    ];
+                    const randomFail = failMessages[Math.floor(Math.random() * failMessages.length)];
+                    this.showMessage(randomFail, 'fail');
+                }
+            }
+            
+            grabPrize(prize) {
+                const points = parseInt(prize.dataset.points);
+                const toyName = prize.dataset.name;
+                this.score += points;
+                this.toyCount--;
+                this.scoreElement.textContent = this.score;
+                this.toyCountElement.textContent = this.toyCount;
+                
+                prize.classList.add('grabbed');
+                setTimeout(() => {
+                    prize.style.display = 'none';
+                }, 1500);
+                
+                const successMessages = [
+                    `AWWW! ${toyName.toUpperCase()} IS SO CUTE! +${points} PTS! 🥰`,
+                    `ADORABLE ${toyName.toUpperCase()} RESCUED! +${points} PTS! 💕`,
+                    `SUCH A CUTIE PIE! +${points} PTS! 😍`,
+                    `KAWAII ${toyName.toUpperCase()} GET! +${points} PTS! ✨`
+                ];
+                
+                const randomMessage = successMessages[Math.floor(Math.random() * successMessages.length)];
+                this.showMessage(randomMessage, 'success');
+                
+                // Check if all prizes are gone
+                if (this.toyCount === 0) {
+                    setTimeout(() => {
+                        this.showMessage('🏆 ALL PIXEL TOYS RESCUED! 🏆\nNEW SHIPMENT ARRIVING...', 'success');
+                        setTimeout(() => {
+                            this.generatePrizes();
+                            this.hideMessage();
+                        }, 2500);
+                    }, 2000);
+                }
+            }
+            
+            showMessage(text, type) {
+                this.messageElement.textContent = text;
+                this.messageElement.className = `message ${type}`;
+                this.messageElement.style.display = 'block';
+                
+                setTimeout(() => {
+                    this.hideMessage();
+                }, 2000);
+            }
+            
+            hideMessage() {
+                this.messageElement.style.display = 'none';
+            }
+        }
+        
+        // Initialize the game when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            new PixelClawMachine();
+        });
+    </script>
+</body>
+</html>
